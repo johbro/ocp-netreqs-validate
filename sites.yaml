@@ -1,0 +1,39 @@
+sites:
+  - name: registries
+    validate: all
+    urls:
+      - "http://registry.redhat.io"
+      - "http://registry.access.redhat.com"
+      - "http://quay.io"
+      - "http://quayio-production-s3.s3.amazonaws.com"
+  - name: quay mirrors
+    validate: any
+    urls:
+      - "http://cdn.quay.io"
+      - "http://cdn01.quay.io"
+      - "http://cdn02.quay.io"
+      - "http://cdn03.quay.io"
+  - name: openshift access apis
+    validate: all
+    urls:
+      - "http://sso.redhat.com"
+      - "http://cert-api.access.redhat.com"
+      - "http://api.access.redhat.com"
+      - "http://infogw.api.openshift.com"
+  - name: openshift central apis
+    validate: all
+    urls:  
+      - "http://console.redhat.com/api/ingress"
+      - "http://cloud.redhat.com/api/ingress"
+      - "http://api.openshift.com"
+      - "http://console.redhat.com/openshift"
+  - name: openshift download mirrors
+    validate: all
+    urls:
+      - "http://mirror.openshift.com"
+      - "http://storage.googleapis.com/openshift-release"
+  - name: openshift coreos mirrors
+    validate: all
+    urls:
+      - "http://rhcos-redirector.apps.art.xq1c.p1.openshiftapps.com"
+      - "http://rhcos.mirror.openshift.com"
