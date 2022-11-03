@@ -1,43 +1,82 @@
 package main
 
-import "fmt"
-import "net/http"
+import (
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"gopkg.in/yaml.v3"
+)
 
-var urls = []string{
-	"http://registry.redhat.io",
-	"http://quay.io",
-	"http://cdn.quay.io",
-	"http://cdn01.quay.io",
-	"http://cdn02.quay.io",
-	"http://cdn03.quay.io",
-	"http://sso.redhat.com",
-	"http://cert-api.access.redhat.com",
-	"http://api.access.redhat.com",
-	"http://infogw.api.openshift.com",
-	"http://console.redhat.com/api/ingress",
-	"http://cloud.redhat.com/api/ingress",
-	"http://mirror.openshift.com",
-	"http://storage.googleapis.com/openshift-release",
-	"http://quayio-production-s3.s3.amazonaws.com",
-	"http://api.openshift.com",
-	"http://rhcos-redirector.apps.art.xq1c.p1.openshiftapps.com",
-	"http://rhcos.mirror.openshift.com",
-	"http://console.redhat.com/openshift",
-	"http://registry.access.redhat.com",
+type Site struct {
+	Name     string   `yaml:"name"`
+	Validate string   `yaml:"validate"`
+	Urls     []string `yaml:"urls"`
 }
 
+type YMLSites struct {
+	Sites []Site `yaml:"sites"`
+}
 
 
 func main() {
 	fmt.Println("Checking required access for OpenShift 4")
 	checkemoji := '\U00002705'
 	failemoji := '\U0000274C'
-	for i, url := range urls {
-		resp, err := http.Get(url)
-		if err != nil {
-			fmt.Printf("%d %c %s is not accessible. Check network\n", i, failemoji, url)
+	yfile, err := ioutil.ReadFile("sites.yaml")
+
+	if err != nil {
+
+		log.Fatal(err)
+	}
+
+	var siteList YMLSites
+	err2 := yaml.Unmarshal(yfile, &siteList)
+
+	if err2 != nil {
+
+		log.Fatal(err2)
+	}
+
+	//fmt.Printf("%s\n", siteList)
+	for k, site := range siteList.Sites {
+		//fmt.Printf("key: %s, value: %s \n", k, site.Name)
+		Unused(k)
+		if site.Validate == "all" {
+			fmt.Printf("validating ALL sites for: %s \n", site.Name)
+			for i, url := range site.Urls {
+				Unused(i)
+				resp, err3 := http.Get(url)
+				if err3 != nil {
+					fmt.Printf("  %c %s is not accessible. Check network\n", failemoji, url)
+				} else {
+					fmt.Printf("  %c %s GOOD! (got %d response)\n", checkemoji, url, resp.StatusCode)
+				}
+			}
 		} else {
-			fmt.Printf("%d %c %s GOOD! (got %d response)\n", i, checkemoji, url, resp.StatusCode)
+			//as long as one site is online
+			fmt.Printf("validating ANY sites for: %s \n", site.Name)
+
+			var successCount int
+			var failureCount int
+
+			for i := 1; i < len(site.Urls); i++ {
+				resp, err3 := http.Get(site.Urls[i])
+				if err3 != nil {
+					failureCount += 1
+				} else {
+					successCount += 1
+				}
+			}
+			if successCount >= 1 {
+				fmt.Printf("  %c %s [%d/%d] GOOD!\n", checkemoji, site.Name, successCount, len(site.Urls))
+			} else {
+				fmt.Printf("  %c %s is not accessible. Check network\n", checkemoji, site.Name)
+			}
+
 		}
 	}
+
 }
+func Unused(x ...interface{}) {}
+
